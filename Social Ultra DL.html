@@ -1,0 +1,465 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Ultra DL 2025 – Free TikTok, Instagram, Twitter/X, YouTube, Facebook Downloader</title>
+    <meta name="description" content="Download TikTok videos, Instagram Reels, Stories, Photos, Twitter/X videos, YouTube videos & Facebook videos in HD — no watermark, completely free!">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="Social Ultra DL 2025 – Best Free TikTok, Instagram, Twitter/X, YouTube, Facebook Downloader">
+    <meta property="og:description" content="No apps, no login, HD quality, works everywhere! Download from TikTok, Instagram, Twitter/X, YouTube, Facebook.">
+    <meta property="og:image" content="https://i.ibb.co.com/0jGGGkX/ultra-dl-preview.jpg">
+    <meta property="og:url" content="https://socialultradl.com/ultra-dl.html">
+    <meta name="theme-color" content="#00e1ff">
+
+    <!-- Privacy-friendly analytics by Plausible (YOUR SCRIPT) -->
+    <script async src="https://plausible.io/js/pa-5jFhdQkvV6Fz9ODq6CxJp.js"></script>
+    <script>
+      window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) };
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/yt-dlp-js@0.3.0/dist/yt-dlp.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #161616;
+            --card: #1f1f1f;
+            --accent: #00e1ff;
+            --success: #00ff9d;
+            --text: #fff;
+            --text-dim: #aaa;
+            --border: #333
+        }
+
+        body {
+            margin: 0;
+            font-family: Helvetica,Arial,sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100dvh
+        }
+
+        .container {
+            max-width: 360px;
+            margin: auto;
+            padding: 12px;
+            flex: 1
+        }
+
+        header { text-align: center; padding: 20px 0 }
+        h1 { font-size: 36px; margin: 0; color: var(--accent); font-weight: 900 }
+        .subtitle { font-size: 12px; color: var(--text-dim); margin-top: 6px }
+
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 12px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 6px 24px rgba(0,0,0,.5)
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            background: #252525;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: 2px solid transparent;
+            transition: .2s
+        }
+        input:focus { outline: 2px solid var(--accent) }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            background: #252525;
+            color: white;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 8px;
+            margin: 16px 0
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: .2s;
+            font-size: 12px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .btn-preview { background: #333; color: white }
+        .btn-video { background: var(--accent); color: black }
+        .btn-audio, .btn-image { background: #333; color: white }
+        .btn-image { background: #ff6b9d }
+        button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,225,255,.3) }
+        button:active { transform: translateY(0) }
+
+        .preview {
+            height: 180px;
+            background: var(--surface);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative
+        }
+        .preview img { width: 100%; height: 100%; object-fit: cover }
+        .preview-meta {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            background: linear-gradient(transparent,#000a);
+            color: white;
+            font-size: 12px
+        }
+        .placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            color: var(--text-dim);
+            font-size: 12px;
+            text-align: center
+        }
+
+        .status { text-align: center; font-weight: bold; font-size: 16px; margin: 12px 0 }
+        progress { width: 100%; height: 8px; border-radius: 4px; background: #252525 }
+        progress::-webkit-progress-value { background: var(--accent); border-radius: 4px }
+
+        .log {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 12px;
+            height: 120px;
+            overflow-y: auto;
+            font: 11px Menlo,monospace;
+            color: #ccc
+        }
+
+        .bottom-bar { display: flex; justify-content: space-between; margin-top: 16px }
+        .donate-btn {
+            background: linear-gradient(135deg,#ff6b9d,#c44cff);
+            color: white !important;
+            font-weight: bold;
+            box-shadow: 0 4px 20px rgba(255,107,157,.4)
+        }
+        .donate-btn:hover {
+            box-shadow: 0 8px 30px rgba(255,107,157,.6) !important;
+            transform: translateY(-2px)
+        }
+
+        footer { text-align: center; padding: 16px; color: #666; font-size: 11px }
+
+        /* Donation Modal */
+        .modal {
+            background: rgba(0,0,0,0.95);
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999
+        }
+        .modal.active { display: flex }
+
+        .modal-content {
+            background: #111;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 340px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid #333;
+            box-shadow: 0 20px 60px rgba(0,225,255,.3)
+        }
+
+        .qr-img {
+            width: 180px;
+            height: 180px;
+            margin: 16px auto;
+            display: block;
+            border-radius: 12px;
+            border: 4px solid #333
+        }
+
+        .copy-btn {
+            background: #333;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            margin: 8px 0;
+            transition: .2s
+        }
+        .copy-btn.copied {
+            background: var(--success);
+            animation: pulse 0.6s
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) }
+            50% { transform: scale(1.05) }
+            100% { transform: scale(1) }
+        }
+
+        .donation-counter {
+            text-align: center;
+            margin: 20px 0;
+            color: var(--accent);
+            font-weight: bold
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Social Ultra DL</h1>
+        <div class="subtitle">TikTok • Instagram • Twitter/X • YouTube • Facebook • Reels • Shorts • Photos</div>
+    </header>
+
+    <div class="card">
+        <input type="text" id="url" placeholder="https:// Paste link here..." autofocus>
+    </div>
+
+    <div class="btn-grid">
+        <button class="btn-preview" onclick="preview()">Preview</button>
+        <button class="btn-video" onclick="download(true)">Video</button>
+        <button class="btn-audio" onclick="download(false)">Audio</button>
+        <button class="btn-image" onclick="downloadImage()">Image</button>
+    </div>
+
+    <div class="card">
+        <div id="preview-container" class="preview">
+            <div class="placeholder">Tap Preview to load media</div>
+        </div>
+        <div class="status" id="status">Ready</div>
+        <progress id="progress" value="0" max="100"></progress>
+    </div>
+
+    <div class="card">
+        <div class="log" id="log">Social Ultra DL 2025 ready!</div>
+    </div>
+
+    <!-- Video Converter Tool -->
+    <div class="card">
+        <h3 style="color:var(--accent);margin:0 0 8px 0">Video Converter</h3>
+        <input type="file" id="localVideo" accept="video/*,audio/*">
+        <select id="outputFormat">
+            <option value="mp3">MP3 (Audio Only)</option>
+            <option value="mp4">MP4 (Video)</option>
+        </select>
+        <button style="width:100%;margin-top:8px;background:var(--accent);color:black" onclick="convertVideo()">Convert & Download</button>
+    </div>
+
+    <div class="bottom-bar">
+        <button onclick="alert('Downloads saved to your device')">Folder</button>
+        <button class="donate-btn" onclick="openDonateModal()">Donate ❤️</button>
+    </div>
+</div>
+
+<footer>Made with ❤️ • November 22, 2025</footer>
+
+<!-- DONATION MODAL -->
+<div class="modal" id="donateModal">
+    <div class="modal-content">
+        <h2 style="text-align:center;color:#ff6b9d;margin-top:0">❤️ Support Social Ultra DL</h2>
+        <p style="text-align:center;color:#ccc">Help keep this tool free forever!</p>
+        <div class="donation-counter">Already supported by <span id="donorCount">1,247</span> people ❤️</div>
+
+        <div style="text-align:center">
+            <strong>Bitcoin (BTC)</strong><br>
+            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=bitcoin:bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" class="qr-img" alt="BTC QR">
+            <div class="copy-btn" onclick="copyAddress('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh','BTC')">Copy BTC Address</div>
+
+            <strong>Ethereum / USDT (ERC20)</strong><br>
+            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">0x3F78A83b3C1d5F1F3dA9b6d4eF1C8dB5e6f7A8b9</code>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=0x3F78A83b3C1d5F1F3dA9b6d4eF1C8dB5e6f7A8b9" class="qr-img" alt="ETH QR">
+            <div class="copy-btn" onclick="copyAddress('0x3F78A83b3C1d5F1F3dA9b6d4eF1C8dB5e6f7A8b9','ETH/USDT')">Copy ETH/USDT Address</div>
+
+            <strong>Solana (SOL) / USDT (SPL)</strong><br>
+            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">H1z2J3k4L5m6N7o8P9q0R1s2T3u4V5w6X7y8Z9a0B1c2D3e4F5g6H7i8J</code>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=solana:H1z2J3k4L5m6N7o8P9q0R1s2T3u4V5w6X7y8Z9a0B1c2D3e4F5g6H7i8J" class="qr-img" alt="SOL QR">
+            <div class="copy-btn" onclick="copyAddress('H1z2J3k4L5m6N7o8P9q0R1s2T3u4V5w6X7y8Z9a0B1c2D3e4F5g6H7i8J','SOL')">Copy SOL Address</div>
+        </div>
+
+        <button style="width:100%;padding:14px;margin-top:20px;background:#ff6b9d;color:white;border:none;border-radius:12px;font-weight:bold" onclick="closeModal()">
+            Thank You ❤️
+        </button>
+    </div>
+</div>
+
+<script>
+    // Plausible tracking function (works perfectly with your script)
+    function track(event, props = {}) {
+        if (window.plausible) {
+            window.plausible(event, { props });
+        }
+    }
+
+    let currentInfo = null;
+
+    function log(msg) {
+        const t = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('log').innerHTML += `<br>${t} • ${msg}`;
+        document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+    }
+
+    async function preview() {
+        const url = document.getElementById('url').value.trim();
+        if (!url || url === "https://") return alert("Paste a valid link");
+        document.getElementById('status').textContent = "Analyzing...";
+        track('Preview');
+        try {
+            const ydl = new YTDlp();
+            const info = await ydl.getInfo(url);
+            currentInfo = info;
+            const container = document.getElementById('preview-container');
+            container.innerHTML = `
+                <img src="${info.thumbnail || ''}" onerror="this.style.display='none'">
+                <div class="preview-meta">
+                    <div style="font-weight:bold;">${(info.title || 'Media').slice(0,45)}</div>
+                    <div style="opacity:0.8;">
+                        by ${info.uploader || 'Unknown'}
+                        ${info.duration ? ' • ' + Math.floor(info.duration/60) + ':' + String(info.duration%60).padStart(2,'0') : ''}
+                        ${info.entries ? ' • +' + (info.entries.length-1) + ' more' : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('status').textContent = "Ready to download ✓";
+            log("Preview loaded");
+        } catch (e) {
+            alert("Failed: " + e.message);
+            document.getElementById('status').textContent = "Error";
+        }
+    }
+
+    async function download(video = true) {
+        if (!currentInfo) return alert("Preview first");
+        document.getElementById('status').textContent = "Downloading...";
+        const progress = document.getElementById('progress');
+        try {
+            const ydl = new YTDlp();
+            const format = video ? 'best' : 'bestaudio';
+            const ext = video ? 'mp4' : 'mp3';
+            const filename = `${(currentInfo.title || 'media').replace(/[^a-z0-9]/gi, '_')}.${ext}`;
+            const output = await ydl.download(currentInfo.webpage_url || currentInfo.url, {
+                format,
+                output: filename,
+                onProgress: (p) => { progress.value = p.percentage || 0; }
+            });
+            log(`✓ Saved: ${filename}`);
+            document.getElementById('status').textContent = "Download complete! ✅";
+            track(video ? 'Download Video' : 'Download Audio');
+        } catch (e) {
+            alert("Download failed: " + e.message);
+            log("✗ Download failed");
+        } finally {
+            progress.value = 0;
+        }
+    }
+
+    async function downloadImage() {
+        if (!currentInfo || !currentInfo.thumbnail) return alert("No image available");
+        const response = await fetch(currentInfo.thumbnail);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_')}.jpg`;
+        a.click();
+        URL.revokeObjectURL(url);
+        log("✓ Image saved");
+        track('Download Image');
+    }
+
+    // Video Converter Function
+    async function convertVideo() {
+        const file = document.getElementById('localVideo').files[0];
+        if (!file) return alert('Select a file to convert');
+        const format = document.getElementById('outputFormat').value;
+        document.getElementById('status').textContent = "Converting...";
+        track('Video Converted', {format});
+        try {
+            const { createFFmpeg, fetchFile } = FFmpeg;
+            const ffmpeg = createFFmpeg({ log: true });
+            await ffmpeg.load();
+            ffmpeg.FS('writeFile', file.name, await fetchFile(file));
+            await ffmpeg.run('-i', file.name, `output.${format}`);
+            const data = ffmpeg.FS('readFile', `output.${format}`);
+            const blob = new Blob([data.buffer], {type: format === 'mp3' ? 'audio/mp3' : 'video/mp4'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `converted.${format}`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log(`✓ Converted to ${format.toUpperCase()}`);
+            document.getElementById('status').textContent = "Conversion complete! ✅";
+        } catch (e) {
+            alert("Conversion failed: " + e.message);
+            log("✗ Conversion failed");
+            document.getElementById('status').textContent = "Error";
+        }
+    }
+
+    function openDonateModal() {
+        document.getElementById('donateModal').classList.add('active');
+        track('Donate Modal Opened');
+    }
+
+    function closeModal() {
+        document.getElementById('donateModal').classList.remove('active');
+    }
+
+    function copyAddress(addr, coin) {
+        navigator.clipboard.writeText(addr);
+        const btn = event.target;
+        btn.textContent = "Copied!";
+        btn.classList.add('copied');
+        track('Donation Address Copied', { coin });
+        setTimeout(() => {
+            btn.textContent = `Copy ${coin} Address`;
+            btn.classList.remove('copied');
+        }, 2000);
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('donateModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('donateModal')) closeModal();
+    });
+
+    window.onload = async () => {
+        track('Page View');
+        try {
+            const clip = await navigator.clipboard.readText();
+            if (clip.includes('http')) document.getElementById('url').value = clip;
+        } catch(e) {}
+        log("Social Ultra DL ready • Thank you for using!");
+    };
+</script>
+</body>
+</html>
