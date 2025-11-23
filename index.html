@@ -308,6 +308,7 @@
         }
     }
 
+    const btch = window.btch;
     let currentInfo = null;
 
     function log(msg) {
@@ -322,7 +323,7 @@
         document.getElementById('status').textContent = "Analyzing...";
         track('Preview');
         try {
-            const info = await aio(url);
+            const info = await btch.aio(url);
             currentInfo = info;
             const container = document.getElementById('preview-container');
             const title = (info.title || 'Media').slice(0,45) + ((info.title || '').length > 45 ? '...' : '');
