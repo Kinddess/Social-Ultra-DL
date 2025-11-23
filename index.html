@@ -19,7 +19,7 @@
     <!-- btch-downloader for media downloading -->
     <script src="https://cdn.jsdelivr.net/npm/btch-downloader@latest/dist/browser/index.min.js"></script>
     <!-- FFmpeg for audio extraction if needed -->
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js"></script>
     <style>
         :root {
             --bg: #0a0a0a;
@@ -240,7 +240,7 @@
     </header>
 
     <div class="card">
-        <input type="text" id="url" placeholder="https:// Paste link here..." autofocus>
+        <input type="text" id="url" placeholder="Paste link here..." autofocus>
     </div>
 
     <div class="btn-grid">
@@ -310,17 +310,51 @@
 
     const btch = window.btch;
     let currentInfo = null;
+    const statusEl = document.getElementById('status');
+    const progressEl = document.getElementById('progress');
+    const logEl = document.getElementById('log');
 
     function log(msg) {
         const t = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        document.getElementById('log').innerHTML += `<br>${t} • ${msg}`;
-        document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+        logEl.innerHTML += `<br>${t} • ${msg}`;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function saveBlob(blob, filename) {
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(downloadUrl);
+    }
+
+    async function fetchWithProgress(url, mimeType = null) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'blob';
+            xhr.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    progressEl.value = (e.loaded / e.total) * 100;
+                }
+            };
+            xhr.onload = () => {
+                let blob = xhr.response;
+                if (mimeType && blob.type !== mimeType) {
+                    blob = new Blob([blob], { type: mimeType });
+                }
+                resolve(blob);
+            };
+            xhr.onerror = () => reject(new Error('Fetch error'));
+            xhr.send();
+        });
     }
 
     async function preview() {
         const url = document.getElementById('url').value.trim();
-        if (!url || url === "https://") return alert("Paste a valid link");
-        document.getElementById('status').textContent = "Analyzing...";
+        if (!url) return alert("Paste a valid link");
+        statusEl.textContent = "Analyzing...";
         track('Preview');
         try {
             const info = await btch.aio(url);
@@ -328,9 +362,12 @@
             const container = document.getElementById('preview-container');
             const title = (info.title || 'Media').slice(0,45) + ((info.title || '').length > 45 ? '...' : '');
             const uploader = info.author?.nick_name || info.author || 'Unknown';
-            const thumbnail = info.cover || info.thumbnail || '';
+            let thumbnail = info.cover || info.thumbnail || '';
+            if (!thumbnail && info.entries?.length) {
+                thumbnail = info.entries[0].cover || info.entries[0].thumbnail || '';
+            }
             const duration = info.duration ? ' • ' + Math.floor(info.duration/60) + ':' + String(info.duration%60).padStart(2,'0') : '';
-            const entries = info.entries ? ' • +' + (info.entries.length - 1) + ' more' : '';
+            const entries = info.entries?.length ? ' • Album with ' + info.entries.length + ' items' : '';
             container.innerHTML = `
                 <img src="${thumbnail}" alt="Media thumbnail" onerror="this.style.display='none'">
                 <div class="preview-meta">
@@ -340,108 +377,121 @@
                     </div>
                 </div>
             `;
-            document.getElementById('status').textContent = "Ready to download ✓";
+            statusEl.textContent = "Ready to download ✓";
             log("Preview loaded");
         } catch (e) {
             alert("Failed: " + e.message);
-            document.getElementById('status').textContent = "Error";
+            statusEl.textContent = "Error";
+            log("✗ Preview failed: " + e.message);
         }
     }
 
-    async function download(video = true) {
-        if (!currentInfo) return alert("Preview first");
-        document.getElementById('status').textContent = "Downloading...";
-        const progress = document.getElementById('progress');
-        progress.value = 0; // Reset progress
-        try {
-            let mediaUrl, ext, type;
-            if (video) {
-                mediaUrl = currentInfo.video?.[0]?.url || currentInfo.play || currentInfo.video?.url;
-                ext = 'mp4';
-                type = 'video/mp4';
-            } else {
-                mediaUrl = currentInfo.music || currentInfo.audio;
-                ext = 'mp3';
-                type = 'audio/mp3';
-            }
+    async function downloadMedia(info, isVideo) {
+        let mediaUrl, ext, mimeType;
+        if (isVideo) {
+            mediaUrl = info.video?.[0]?.url || info.play || info.video?.url;
+            ext = 'mp4';
+            mimeType = 'video/mp4';
+        } else {
+            mediaUrl = info.music || info.audio;
+            ext = 'mp3';
+            mimeType = 'audio/mp3';
+        }
 
-            if (!mediaUrl && !video) {
-                // Extract audio using FFmpeg if no direct audio URL
-                const videoUrl = currentInfo.video?.[0]?.url || currentInfo.play || currentInfo.video?.url;
-                if (!videoUrl) throw new Error("No video URL available for audio extraction");
-                document.getElementById('status').textContent = "Extracting audio...";
-                const { createFFmpeg, fetchFile } = FFmpeg;
-                const ffmpeg = createFFmpeg({ log: true });
-                await ffmpeg.load();
-                const videoResponse = await fetch(videoUrl);
-                const videoBlob = await videoResponse.blob();
-                const videoName = 'input.mp4';
-                ffmpeg.FS('writeFile', videoName, await fetchFile(videoBlob));
-                await ffmpeg.run('-i', videoName, 'output.mp3');
-                const data = ffmpeg.FS('readFile', 'output.mp3');
-                const blob = new Blob([data.buffer], {type: 'audio/mp3'});
-                mediaUrl = URL.createObjectURL(blob);
-                ext = 'mp3';
-                type = 'audio/mp3';
-            }
-
-            if (!mediaUrl) throw new Error("No media URL available");
-
-            // Fetch with progress (using XMLHttpRequest for progress tracking)
-            const response = await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', mediaUrl, true);
-                xhr.responseType = 'blob';
-                xhr.onprogress = (e) => {
-                    if (e.lengthComputable) {
-                        progress.value = (e.loaded / e.total) * 100;
-                    }
-                };
-                xhr.onload = () => resolve(xhr.response);
-                xhr.onerror = reject;
-                xhr.send();
+        let mediaBlob;
+        if (!mediaUrl && !isVideo) {
+            const videoUrl = info.video?.[0]?.url || info.play || info.video?.url;
+            if (!videoUrl) throw new Error("No video URL available for audio extraction");
+            statusEl.textContent = "Fetching video for extraction...";
+            const videoBlob = await fetchWithProgress(videoUrl, 'video/mp4');
+            statusEl.textContent = "Extracting audio...";
+            const { createFFmpeg, fetchFile } = FFmpeg;
+            const ffmpeg = createFFmpeg({ 
+                log: true,
+                progress: (p) => { progressEl.value = p.ratio * 100; }
             });
+            await ffmpeg.load();
+            ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoBlob));
+            await ffmpeg.run('-i', 'input.mp4', 'output.mp3');
+            const data = ffmpeg.FS('readFile', 'output.mp3');
+            mediaBlob = new Blob([data.buffer], { type: 'audio/mp3' });
+            ext = 'mp3';
+            mimeType = 'audio/mp3';
+        } else if (mediaUrl) {
+            mediaBlob = await fetchWithProgress(mediaUrl, mimeType);
+        } else {
+            throw new Error("No media URL available");
+        }
 
-            const blob = new Blob([response], { type });
-            const downloadUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const filename = `${(currentInfo.title || 'media').replace(/[^a-z0-9]/gi, '_')}.${ext}`;
-            a.href = downloadUrl;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(downloadUrl);
-            log(`✓ Saved: ${filename}`);
-            document.getElementById('status').textContent = "Download complete! ✅";
-            track(video ? 'Download Video' : 'Download Audio');
+        const filename = `${(info.title || 'media').replace(/[^a-z0-9]/gi, '_')}.${ext}`;
+        saveBlob(mediaBlob, filename);
+        return filename;
+    }
+
+    async function download(isVideo) {
+        if (!currentInfo) return alert("Preview first");
+        progressEl.value = 0;
+        try {
+            if (currentInfo.entries?.length) {
+                for (let i = 0; i < currentInfo.entries.length; i++) {
+                    const entry = currentInfo.entries[i];
+                    statusEl.textContent = `Downloading item ${i+1}/${currentInfo.entries.length}...`;
+                    const filename = await downloadMedia(entry, isVideo);
+                    log(`✓ Saved: ${filename} (${i+1})`);
+                }
+            } else {
+                statusEl.textContent = "Downloading...";
+                const filename = await downloadMedia(currentInfo, isVideo);
+                log(`✓ Saved: ${filename}`);
+            }
+            statusEl.textContent = "Download complete! ✅";
+            track(isVideo ? 'Download Video' : 'Download Audio');
         } catch (e) {
             alert("Download failed: " + e.message);
-            log("✗ Download failed");
+            log("✗ Download failed: " + e.message);
+            statusEl.textContent = "Error";
         } finally {
-            progress.value = 0;
+            progressEl.value = 0;
         }
     }
 
     async function downloadImage() {
         if (!currentInfo) return alert("Preview first");
-        let imageUrl = currentInfo.cover || currentInfo.thumbnail;
-        if (currentInfo.type === 'image' && currentInfo.images) {
-            imageUrl = currentInfo.images[0];
-        }
-        if (!imageUrl) return alert("No image available");
+        progressEl.value = 0;
         try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${(currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_')}.jpg`;
-            a.click();
-            URL.revokeObjectURL(url);
-            log("✓ Image saved");
+            let images = [];
+            if (currentInfo.type === 'image' && currentInfo.images?.length) {
+                images = currentInfo.images;
+            } else if (currentInfo.entries?.length) {
+                currentInfo.entries.forEach(entry => {
+                    if (entry.type === 'image' && entry.url) {
+                        images.push(entry.url);
+                    } else if (entry.cover || entry.thumbnail) {
+                        images.push(entry.cover || entry.thumbnail);
+                    }
+                });
+            } else if (currentInfo.cover || currentInfo.thumbnail) {
+                images = [currentInfo.cover || currentInfo.thumbnail];
+            }
+            if (!images.length) return alert("No image available");
+
+            for (let i = 0; i < images.length; i++) {
+                const imageUrl = images[i];
+                statusEl.textContent = images.length > 1 ? `Downloading image ${i+1}/${images.length}...` : "Downloading image...";
+                const blob = await fetchWithProgress(imageUrl, 'image/jpeg');
+                const baseName = (currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_');
+                const filename = images.length > 1 ? `${baseName}_${i+1}.jpg` : `${baseName}.jpg`;
+                saveBlob(blob, filename);
+                log(`✓ Saved: ${filename}`);
+            }
+            statusEl.textContent = "Download complete! ✅";
             track('Download Image');
         } catch (e) {
             alert("Image download failed: " + e.message);
-            log("✗ Image download failed");
+            log("✗ Image download failed: " + e.message);
+            statusEl.textContent = "Error";
+        } finally {
+            progressEl.value = 0;
         }
     }
 
@@ -475,7 +525,7 @@
         track('Page View');
         try {
             const clip = await navigator.clipboard.readText();
-            if (clip.includes('http')) document.getElementById('url').value = clip;
+            if (clip.startsWith('http')) document.getElementById('url').value = clip;
         } catch(e) {}
         log("Social Ultra DL ready • Thank you for using!");
     };
