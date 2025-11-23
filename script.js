@@ -6,7 +6,6 @@ function track(event, props = {}) {
     }
 }
 
-const btch = window.btch;
 let currentInfo = null;
 const statusEl = document.getElementById('status');
 const progressEl = document.getElementById('progress');
@@ -38,11 +37,15 @@ async function fetchWithProgress(url, mimeType = null) {
             }
         };
         xhr.onload = () => {
-            let blob = xhr.response;
-            if (mimeType && blob.type !== mimeType) {
-                blob = new Blob([blob], { type: mimeType });
+            if (xhr.status === 200) {
+                let blob = xhr.response;
+                if (mimeType && blob.type !== mimeType) {
+                    blob = new Blob([blob], { type: mimeType });
+                }
+                resolve(blob);
+            } else {
+                reject(new Error(`HTTP error! status: ${xhr.status}`));
             }
-            resolve(blob);
         };
         xhr.onerror = () => reject(new Error('Fetch error'));
         xhr.send();
@@ -55,14 +58,16 @@ async function preview() {
     statusEl.textContent = "Analyzing...";
     track('Preview');
     try {
-        const info = await btch.aio(url);
+        const response = await fetch(`/info?url=${encodeURIComponent(url)}`);
+        if (!response.ok) throw new Error(await response.text());
+        const info = await response.json();
         currentInfo = info;
         const container = document.getElementById('preview-container');
         const title = (info.title || 'Media').slice(0,45) + ((info.title || '').length > 45 ? '...' : '');
-        const uploader = info.author?.nick_name || info.author || 'Unknown';
-        let thumbnail = info.cover || info.thumbnail || '';
+        const uploader = info.author || 'Unknown';
+        let thumbnail = info.thumbnail || '';
         if (!thumbnail && info.entries?.length) {
-            thumbnail = info.entries[0].cover || info.entries[0].thumbnail || '';
+            thumbnail = info.entries[0].thumbnail || '';
         }
         const duration = info.duration ? ' • ' + Math.floor(info.duration/60) + ':' + String(info.duration%60).padStart(2,'0') : '';
         const entries = info.entries?.length ? ' • Album with ' + info.entries.length + ' items' : '';
@@ -84,62 +89,31 @@ async function preview() {
     }
 }
 
-async function downloadMedia(info, isVideo) {
-    let mediaUrl, ext, mimeType;
-    if (isVideo) {
-        mediaUrl = info.video?.[0]?.url || info.play || info.video?.url;
-        ext = 'mp4';
-        mimeType = 'video/mp4';
-    } else {
-        mediaUrl = info.music || info.audio;
-        ext = 'mp3';
-        mimeType = 'audio/mp3';
-    }
-
-    let mediaBlob;
-    if (!mediaUrl && !isVideo) {
-        const videoUrl = info.video?.[0]?.url || info.play || info.video?.url;
-        if (!videoUrl) throw new Error("No video URL available for audio extraction");
-        statusEl.textContent = "Fetching video for extraction...";
-        const videoBlob = await fetchWithProgress(videoUrl, 'video/mp4');
-        statusEl.textContent = "Extracting audio...";
-        const { createFFmpeg, fetchFile } = FFmpeg;
-        const ffmpeg = createFFmpeg({ 
-            log: true,
-            progress: (p) => { progressEl.value = p.ratio * 100; }
-        });
-        await ffmpeg.load();
-        ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(videoBlob));
-        await ffmpeg.run('-i', 'input.mp4', 'output.mp3');
-        const data = ffmpeg.FS('readFile', 'output.mp3');
-        mediaBlob = new Blob([data.buffer], { type: 'audio/mp3' });
-        ext = 'mp3';
-        mimeType = 'audio/mp3';
-    } else if (mediaUrl) {
-        mediaBlob = await fetchWithProgress(mediaUrl, mimeType);
-    } else {
-        throw new Error("No media URL available");
-    }
-
-    const filename = `${(info.title || 'media').replace(/[^a-z0-9]/gi, '_')}.${ext}`;
-    saveBlob(mediaBlob, filename);
+async function downloadMedia(url, typ) {
+    const mediaUrl = `/download?url=${encodeURIComponent(url)}&type=${typ}`;
+    const ext = typ === 'audio' ? 'mp3' : typ === 'video' ? 'mp4' : 'jpg';
+    const mimeType = typ === 'audio' ? 'audio/mp3' : typ === 'video' ? 'video/mp4' : 'image/jpeg';
+    const blob = await fetchWithProgress(mediaUrl, mimeType);
+    const filename = `media.${ext}`; // Better to get from headers, but for simplicity
+    saveBlob(blob, filename);
     return filename;
 }
 
 async function download(isVideo) {
     if (!currentInfo) return alert("Preview first");
     progressEl.value = 0;
+    const typ = isVideo ? 'video' : 'audio';
     try {
         if (currentInfo.entries?.length) {
             for (let i = 0; i < currentInfo.entries.length; i++) {
                 const entry = currentInfo.entries[i];
                 statusEl.textContent = `Downloading item ${i+1}/${currentInfo.entries.length}...`;
-                const filename = await downloadMedia(entry, isVideo);
+                const filename = await downloadMedia(entry.url || document.getElementById('url').value, typ);
                 log(`✓ Saved: ${filename} (${i+1})`);
             }
         } else {
             statusEl.textContent = "Downloading...";
-            const filename = await downloadMedia(currentInfo, isVideo);
+            const filename = await downloadMedia(document.getElementById('url').value, typ);
             log(`✓ Saved: ${filename}`);
         }
         statusEl.textContent = "Download complete! ✅";
@@ -158,29 +132,40 @@ async function downloadImage() {
     progressEl.value = 0;
     try {
         let images = [];
-        if (currentInfo.type === 'image' && currentInfo.images?.length) {
-            images = currentInfo.images;
+        if (currentInfo.type?.includes('image') && currentInfo.images?.length) {
+            images = currentInfo.images.map(img => img.url || img);
         } else if (currentInfo.entries?.length) {
             currentInfo.entries.forEach(entry => {
-                if (entry.type === 'image' && entry.url) {
+                if (entry.type?.includes('image') && entry.url) {
                     images.push(entry.url);
-                } else if (entry.cover || entry.thumbnail) {
-                    images.push(entry.cover || entry.thumbnail);
+                } else if (entry.thumbnail) {
+                    images.push(entry.thumbnail);
                 }
             });
-        } else if (currentInfo.cover || currentInfo.thumbnail) {
-            images = [currentInfo.cover || currentInfo.thumbnail];
+        } else if (currentInfo.thumbnail) {
+            images = [currentInfo.thumbnail];
         }
         if (!images.length) return alert("No image available");
 
         for (let i = 0; i < images.length; i++) {
             const imageUrl = images[i];
-            statusEl.textContent = images.length > 1 ? `Downloading image ${i+1}/${images.length}...` : "Downloading image...";
-            const blob = await fetchWithProgress(imageUrl, 'image/jpeg');
-            const baseName = (currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_');
-            const filename = images.length > 1 ? `${baseName}_${i+1}.jpg` : `${baseName}.jpg`;
-            saveBlob(blob, filename);
-            log(`✓ Saved: ${filename}`);
+            if (imageUrl.startsWith('http')) {
+                // Direct download for thumbnails
+                statusEl.textContent = images.length > 1 ? `Downloading image ${i+1}/${images.length}...` : "Downloading image...";
+                const blob = await fetchWithProgress(imageUrl, 'image/jpeg');
+                const baseName = (currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_');
+                const filename = images.length > 1 ? `${baseName}_${i+1}.jpg` : `${baseName}.jpg`;
+                saveBlob(blob, filename);
+                log(`✓ Saved: ${filename}`);
+            } else {
+                // Use server for thumbnail if needed
+                const mediaUrl = `/download?url=${encodeURIComponent(document.getElementById('url').value)}&type=thumbnail`;
+                const blob = await fetchWithProgress(mediaUrl, 'image/jpeg');
+                const baseName = (currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_');
+                const filename = `${baseName}.jpg`;
+                saveBlob(blob, filename);
+                log(`✓ Saved: ${filename}`);
+            }
         }
         statusEl.textContent = "Download complete! ✅";
         track('Download Image');
