@@ -16,6 +16,8 @@
     <!-- Privacy-friendly analytics by Plausible -->
     <script defer data-domain="socialultradl.com" src="https://plausible.io/js/script.js"></script>
 
+    <!-- btch-downloader for media downloading -->
+    <script src="https://cdn.jsdelivr.net/npm/btch-downloader@latest/dist/browser/index.min.js"></script>
     <!-- FFmpeg for audio extraction if needed -->
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
     <style>
@@ -306,6 +308,7 @@
         }
     }
 
+    const btch = window.btch;
     let currentInfo = null;
 
     function log(msg) {
@@ -320,20 +323,11 @@
         document.getElementById('status').textContent = "Analyzing...";
         track('Preview');
         try {
-            let apiUrl;
-            if (url.includes('tiktok')) {
-                apiUrl = `https://tiklydown.eu/api/download?v=${encodeURIComponent(url)}`;
-            } else if (url.includes('instagram')) {
-                apiUrl = `https://snapinsta.app/api/download?url=${encodeURIComponent(url)}`; // Assuming this API exists and returns similar structure
-            } else {
-                throw new Error("Unsupported platform. Currently supports TikTok and Instagram.");
-            }
-            const response = await fetch(apiUrl);
-            const info = await response.json();
+            const info = await btch.aio(url);
             currentInfo = info;
             const container = document.getElementById('preview-container');
             const title = (info.title || 'Media').slice(0,45) + ((info.title || '').length > 45 ? '...' : '');
-            const uploader = info.author?.nickname || info.author || 'Unknown';
+            const uploader = info.author?.nick_name || info.author || 'Unknown';
             const thumbnail = info.cover || info.thumbnail || '';
             const duration = info.duration ? ' • ' + Math.floor(info.duration/60) + ':' + String(info.duration%60).padStart(2,'0') : '';
             const entries = info.entries ? ' • +' + (info.entries.length - 1) + ' more' : '';
@@ -362,18 +356,18 @@
         try {
             let mediaUrl, ext, type;
             if (video) {
-                mediaUrl = currentInfo.video?.noWatermark || currentInfo.video?.url || currentInfo.play;
+                mediaUrl = currentInfo.video?.[0]?.url || currentInfo.play || currentInfo.video?.url;
                 ext = 'mp4';
                 type = 'video/mp4';
             } else {
-                mediaUrl = currentInfo.music?.url || currentInfo.audio;
+                mediaUrl = currentInfo.music || currentInfo.audio;
                 ext = 'mp3';
                 type = 'audio/mp3';
             }
 
             if (!mediaUrl && !video) {
                 // Extract audio using FFmpeg if no direct audio URL
-                const videoUrl = currentInfo.video?.noWatermark || currentInfo.video?.url || currentInfo.play;
+                const videoUrl = currentInfo.video?.[0]?.url || currentInfo.play || currentInfo.video?.url;
                 if (!videoUrl) throw new Error("No video URL available for audio extraction");
                 document.getElementById('status').textContent = "Extracting audio...";
                 const { createFFmpeg, fetchFile } = FFmpeg;
