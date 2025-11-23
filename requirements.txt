@@ -1,3 +1,4 @@
 flask==3.0.3
-yt-dlp==2024.10.7  # Pin latest as of now
+yt-dlp==2024.10.22
 requests==2.32.3
+gunicorn==22.0.0
