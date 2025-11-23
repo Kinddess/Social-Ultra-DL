@@ -53,8 +53,16 @@ async function fetchWithProgress(url, mimeType = null) {
 }
 
 async function preview() {
-    const url = document.getElementById('url').value.trim();
+    let url = document.getElementById('url').value.trim();
     if (!url) return alert("Paste a valid link");
+    // Clean URL by removing query params if needed
+    try {
+        const u = new URL(url);
+        if (u.hostname.includes('tiktok.com')) {
+            u.search = '';
+            url = u.toString();
+        }
+    } catch {}
     statusEl.textContent = "Analyzing...";
     track('Preview');
     try {
@@ -94,7 +102,7 @@ async function downloadMedia(url, typ) {
     const ext = typ === 'audio' ? 'mp3' : typ === 'video' ? 'mp4' : 'jpg';
     const mimeType = typ === 'audio' ? 'audio/mp3' : typ === 'video' ? 'video/mp4' : 'image/jpeg';
     const blob = await fetchWithProgress(mediaUrl, mimeType);
-    const filename = `media.${ext}`; // Better to get from headers, but for simplicity
+    const filename = `media.${ext}`; // Improve with content-disposition if possible
     saveBlob(blob, filename);
     return filename;
 }
@@ -132,12 +140,12 @@ async function downloadImage() {
     progressEl.value = 0;
     try {
         let images = [];
-        if (currentInfo.type?.includes('image') && currentInfo.images?.length) {
-            images = currentInfo.images.map(img => img.url || img);
+        if (currentInfo.type.includes('image') && currentInfo.images?.length) {
+            images = currentInfo.images;
         } else if (currentInfo.entries?.length) {
             currentInfo.entries.forEach(entry => {
-                if (entry.type?.includes('image') && entry.url) {
-                    images.push(entry.url);
+                if (entry.type.includes('image') && entry.images?.length) {
+                    images.push(...entry.images);
                 } else if (entry.thumbnail) {
                     images.push(entry.thumbnail);
                 }
@@ -145,24 +153,21 @@ async function downloadImage() {
         } else if (currentInfo.thumbnail) {
             images = [currentInfo.thumbnail];
         }
-        if (!images.length) return alert("No image available");
-
-        for (let i = 0; i < images.length; i++) {
-            const imageUrl = images[i];
-            if (imageUrl.startsWith('http')) {
-                // Direct download for thumbnails
+        if (!images.length) {
+            // Fallback to server thumbnail
+            statusEl.textContent = "Downloading thumbnail...";
+            const mediaUrl = `/download?url=${encodeURIComponent(document.getElementById('url').value)}&type=thumbnail`;
+            const blob = await fetchWithProgress(mediaUrl, 'image/jpeg');
+            const filename = `${(currentInfo.title || 'thumbnail').replace(/[^a-z0-9]/gi, '_')}.jpg`;
+            saveBlob(blob, filename);
+            log(`✓ Saved: ${filename}`);
+        } else {
+            for (let i = 0; i < images.length; i++) {
+                const imageUrl = images[i];
                 statusEl.textContent = images.length > 1 ? `Downloading image ${i+1}/${images.length}...` : "Downloading image...";
                 const blob = await fetchWithProgress(imageUrl, 'image/jpeg');
                 const baseName = (currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_');
                 const filename = images.length > 1 ? `${baseName}_${i+1}.jpg` : `${baseName}.jpg`;
-                saveBlob(blob, filename);
-                log(`✓ Saved: ${filename}`);
-            } else {
-                // Use server for thumbnail if needed
-                const mediaUrl = `/download?url=${encodeURIComponent(document.getElementById('url').value)}&type=thumbnail`;
-                const blob = await fetchWithProgress(mediaUrl, 'image/jpeg');
-                const baseName = (currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_');
-                const filename = `${baseName}.jpg`;
                 saveBlob(blob, filename);
                 log(`✓ Saved: ${filename}`);
             }

@@ -5,6 +5,7 @@ import os
 import tempfile
 import zipfile
 import shutil
+import requests
 
 app = Flask(__name__, static_folder='.')
 
@@ -28,6 +29,12 @@ def get_info():
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Referer': 'https://www.tiktok.com/',
+        },
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
@@ -39,8 +46,8 @@ def get_info():
                 'thumbnail': info.get('thumbnail'),
                 'duration': info.get('duration'),
                 'entries': None,
-                'type': info.get('media_type') or 'video',
-                'images': info.get('thumbnails') if info.get('media_type') == 'image' else None
+                'type': 'image' if 'images' in info else 'video',
+                'images': [img['url'] for img in info.get('images', [])] if 'images' in info else None
             }
             if 'entries' in info and info['entries']:
                 normalized['entries'] = []
@@ -51,8 +58,8 @@ def get_info():
                         'thumbnail': entry.get('thumbnail'),
                         'duration': entry.get('duration'),
                         'url': entry.get('url') or entry.get('webpage_url'),
-                        'type': entry.get('media_type') or 'video',
-                        'images': entry.get('thumbnails') if entry.get('media_type') == 'image' else None
+                        'type': 'image' if 'images' in entry else 'video',
+                        'images': [img['url'] for img in entry.get('images', [])] if 'images' in entry else None
                     }
                     normalized['entries'].append(entry_norm)
             return jsonify(normalized)
@@ -62,7 +69,7 @@ def get_info():
 @app.route('/download', methods=['GET'])
 def download_file():
     url = request.args.get('url')
-    typ = request.args.get('type', 'video')  # video, audio, thumbnail
+    typ = request.args.get('type', 'video')  # video, audio, thumbnail, image
     if not url:
         return 'No URL provided', 400
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -70,6 +77,12 @@ def download_file():
             'outtmpl': os.path.join(tmpdir, '%(title)s.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://www.tiktok.com/',
+            },
         }
         if typ == 'video':
             ydl_opts['format'] = 'bestvideo+bestaudio/best'
@@ -80,24 +93,48 @@ def download_file():
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }]
-        elif typ == 'thumbnail':
+        elif typ in ['thumbnail', 'image']:
             ydl_opts['skip_download'] = True
-            ydl_opts['writethumbnail'] = True
-            ydl_opts['outtmpl'] = os.path.join(tmpdir, '%(title)s.%(ext)s')
+            if typ == 'thumbnail':
+                ydl_opts['writethumbnail'] = True
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             try:
-                info = ydl.extract_info(url, download=True)
+                info = ydl.extract_info(url, download=typ not in ['thumbnail', 'image'])
                 filename = ydl.prepare_filename(info)
                 if typ == 'audio':
                     filename = f"{os.path.splitext(filename)[0]}.mp3"
                 elif typ == 'thumbnail':
-                    # yt-dlp saves thumbnail as .jpg or similar
                     for file in os.listdir(tmpdir):
                         if file.endswith(('.jpg', '.webp', '.png')):
                             filename = os.path.join(tmpdir, file)
                             break
                     else:
                         return 'Thumbnail not found', 404
+                elif typ == 'image':
+                    images = info.get('images', [])
+                    if not images:
+                        return 'No images found', 404
+                    if len(images) == 1:
+                        img_url = images[0]['url']
+                        response = requests.get(img_url, stream=True)
+                        if response.status_code != 200:
+                            return 'Failed to fetch image', 500
+                        filename = os.path.join(tmpdir, f"{info.get('id', 'image')}.jpg")
+                        with open(filename, 'wb') as f:
+                            shutil.copyfileobj(response.raw, f)
+                    else:
+                        zip_path = os.path.join(tmpdir, 'images.zip')
+                        with zipfile.ZipFile(zip_path, 'w') as zipf:
+                            for i, img in enumerate(images):
+                                img_url = img['url']
+                                resp = requests.get(img_url, stream=True)
+                                if resp.status_code == 200:
+                                    img_filename = f"image_{i+1}.jpg"
+                                    img_path = os.path.join(tmpdir, img_filename)
+                                    with open(img_path, 'wb') as f:
+                                        shutil.copyfileobj(resp.raw, f)
+                                    zipf.write(img_path, img_filename)
+                        return send_file(zip_path, as_attachment=True, download_name='images.zip')
                 if os.path.exists(filename):
                     return send_file(filename, as_attachment=True, download_name=os.path.basename(filename))
                 else:
@@ -118,6 +155,12 @@ def download_album():
                 'outtmpl': os.path.join(tmpdir, f'item_{idx+1}.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Referer': 'https://www.tiktok.com/',
+                },
             }
             if typ == 'video':
                 ydl_opts['format'] = 'bestvideo+bestaudio/best'
@@ -129,7 +172,14 @@ def download_album():
                     'preferredquality': '192',
                 }]
             elif typ == 'image':
-                ydl_opts['format'] = 'bestimage'
+                # For image, assume url is direct image url
+                response = requests.get(url, stream=True)
+                if response.status_code == 200:
+                    filename = os.path.join(tmpdir, f'image_{idx+1}.jpg')
+                    with open(filename, 'wb') as f:
+                        shutil.copyfileobj(response.raw, f)
+                    files.append(filename)
+                continue
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 filename = ydl.prepare_filename(info)
