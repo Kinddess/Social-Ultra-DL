@@ -29,11 +29,15 @@ def get_info():
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
+        'cookiefile': 'tiktok_cookies.txt' if os.path.exists('tiktok_cookies.txt') else None,  # Add your TikTok cookies here to bypass captcha
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
             'Referer': 'https://www.tiktok.com/',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Dest': 'document',
         },
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -77,11 +81,15 @@ def download_file():
             'outtmpl': os.path.join(tmpdir, '%(title)s.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
+            'cookiefile': 'tiktok_cookies.txt' if os.path.exists('tiktok_cookies.txt') else None,  # Add your TikTok cookies here to bypass captcha
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.5',
                 'Referer': 'https://www.tiktok.com/',
+                'Sec-Fetch-Site': 'same-origin',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Dest': 'document',
             },
         }
         if typ == 'video':
@@ -155,11 +163,15 @@ def download_album():
                 'outtmpl': os.path.join(tmpdir, f'item_{idx+1}.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
+                'cookiefile': 'tiktok_cookies.txt' if os.path.exists('tiktok_cookies.txt') else None,  # Add your TikTok cookies here to bypass captcha
                 'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.5',
                     'Referer': 'https://www.tiktok.com/',
+                    'Sec-Fetch-Site': 'same-origin',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Dest': 'document',
                 },
             }
             if typ == 'video':
@@ -197,6 +209,12 @@ def download_album():
             return send_file(files[0], as_attachment=True, download_name=os.path.basename(files[0]))
         else:
             return 'No files downloaded', 404
+
+# To get tiktok_cookies.txt:
+# 1. Install a browser extension like "Get cookies.txt LOCALLY" for Chrome or Firefox.
+# 2. Visit www.tiktok.com in your browser, log in if necessary, and solve any captcha if prompted.
+# 3. Export the cookies for tiktok.com domain to a file named tiktok_cookies.txt in the same directory as app.py.
+# This should bypass the captcha/NOT_FOUND error.
 
 if __name__ == '__main__':
     app.run(debug=True)
