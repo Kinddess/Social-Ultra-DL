@@ -13,13 +13,12 @@
     <meta property="og:url" content="https://socialultradl.com/ultra-dl.html">
     <meta name="theme-color" content="#00e1ff">
 
-    <!-- Privacy-friendly analytics by Plausible (YOUR SCRIPT) -->
-    <script async src="https://plausible.io/js/pa-5jFhdQkvV6Fz9ODq6CxJp.js"></script>
-    <script>
-      window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) };
-    </script>
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script defer data-domain="socialultradl.com" src="https://plausible.io/js/script.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/yt-dlp-js@0.3.0/dist/yt-dlp.min.js"></script>
+    <!-- btch-downloader for media downloading -->
+    <script src="https://cdn.jsdelivr.net/npm/btch-downloader@latest/dist/browser/index.min.js"></script>
+    <!-- FFmpeg for audio extraction if needed -->
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
     <style>
         :root {
@@ -263,24 +262,13 @@
         <div class="log" id="log">Social Ultra DL 2025 ready!</div>
     </div>
 
-    <!-- Video Converter Tool -->
-    <div class="card">
-        <h3 style="color:var(--accent);margin:0 0 8px 0">Video Converter</h3>
-        <input type="file" id="localVideo" accept="video/*,audio/*">
-        <select id="outputFormat">
-            <option value="mp3">MP3 (Audio Only)</option>
-            <option value="mp4">MP4 (Video)</option>
-        </select>
-        <button style="width:100%;margin-top:8px;background:var(--accent);color:black" onclick="convertVideo()">Convert & Download</button>
-    </div>
-
     <div class="bottom-bar">
         <button onclick="alert('Downloads saved to your device')">Folder</button>
         <button class="donate-btn" onclick="openDonateModal()">Donate ❤️</button>
     </div>
 </div>
 
-<footer>Made with ❤️ • November 22, 2025</footer>
+<footer>Made with ❤️ • November 23, 2025</footer>
 
 <!-- DONATION MODAL -->
 <div class="modal" id="donateModal">
@@ -291,19 +279,19 @@
 
         <div style="text-align:center">
             <strong>Bitcoin (BTC)</strong><br>
-            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=bitcoin:bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" class="qr-img" alt="BTC QR">
-            <div class="copy-btn" onclick="copyAddress('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh','BTC')">Copy BTC Address</div>
+            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">your-btc-address-here</code>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=bitcoin:your-btc-address-here" class="qr-img" alt="BTC QR">
+            <div class="copy-btn" onclick="copyAddress('your-btc-address-here','BTC')">Copy BTC Address</div>
 
             <strong>Ethereum / USDT (ERC20)</strong><br>
-            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">0x3F78A83b3C1d5F1F3dA9b6d4eF1C8dB5e6f7A8b9</code>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=0x3F78A83b3C1d5F1F3dA9b6d4eF1C8dB5e6f7A8b9" class="qr-img" alt="ETH QR">
-            <div class="copy-btn" onclick="copyAddress('0x3F78A83b3C1d5F1F3dA9b6d4eF1C8dB5e6f7A8b9','ETH/USDT')">Copy ETH/USDT Address</div>
+            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">your-eth-address-here</code>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=your-eth-address-here" class="qr-img" alt="ETH QR">
+            <div class="copy-btn" onclick="copyAddress('your-eth-address-here','ETH/USDT')">Copy ETH/USDT Address</div>
 
             <strong>Solana (SOL) / USDT (SPL)</strong><br>
-            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">H1z2J3k4L5m6N7o8P9q0R1s2T3u4V5w6X7y8Z9a0B1c2D3e4F5g6H7i8J</code>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=solana:H1z2J3k4L5m6N7o8P9q0R1s2T3u4V5w6X7y8Z9a0B1c2D3e4F5g6H7i8J" class="qr-img" alt="SOL QR">
-            <div class="copy-btn" onclick="copyAddress('H1z2J3k4L5m6N7o8P9q0R1s2T3u4V5w6X7y8Z9a0B1c2D3e4F5g6H7i8J','SOL')">Copy SOL Address</div>
+            <code style="background:#222;padding:10px;border-radius:8px;font-size:12px;word-break:break-all">your-sol-address-here</code>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=solana:your-sol-address-here" class="qr-img" alt="SOL QR">
+            <div class="copy-btn" onclick="copyAddress('your-sol-address-here','SOL')">Copy SOL Address</div>
         </div>
 
         <button style="width:100%;padding:14px;margin-top:20px;background:#ff6b9d;color:white;border:none;border-radius:12px;font-weight:bold" onclick="closeModal()">
@@ -313,7 +301,7 @@
 </div>
 
 <script>
-    // Plausible tracking function (works perfectly with your script)
+    // Plausible tracking function
     function track(event, props = {}) {
         if (window.plausible) {
             window.plausible(event, { props });
@@ -334,18 +322,20 @@
         document.getElementById('status').textContent = "Analyzing...";
         track('Preview');
         try {
-            const ydl = new YTDlp();
-            const info = await ydl.getInfo(url);
+            const info = await aio(url);
             currentInfo = info;
             const container = document.getElementById('preview-container');
+            const title = (info.title || 'Media').slice(0,45) + ((info.title || '').length > 45 ? '...' : '');
+            const uploader = info.author?.nick_name || info.author || 'Unknown';
+            const thumbnail = info.cover || info.thumbnail || '';
+            const duration = info.duration ? ' • ' + Math.floor(info.duration/60) + ':' + String(info.duration%60).padStart(2,'0') : '';
+            const entries = info.entries ? ' • +' + (info.entries.length - 1) + ' more' : '';
             container.innerHTML = `
-                <img src="${info.thumbnail || ''}" onerror="this.style.display='none'">
+                <img src="${thumbnail}" alt="Media thumbnail" onerror="this.style.display='none'">
                 <div class="preview-meta">
-                    <div style="font-weight:bold;">${(info.title || 'Media').slice(0,45)}</div>
+                    <div style="font-weight:bold;">${title}</div>
                     <div style="opacity:0.8;">
-                        by ${info.uploader || 'Unknown'}
-                        ${info.duration ? ' • ' + Math.floor(info.duration/60) + ':' + String(info.duration%60).padStart(2,'0') : ''}
-                        ${info.entries ? ' • +' + (info.entries.length-1) + ' more' : ''}
+                        by ${uploader}${duration}${entries}
                     </div>
                 </div>
             `;
@@ -361,16 +351,64 @@
         if (!currentInfo) return alert("Preview first");
         document.getElementById('status').textContent = "Downloading...";
         const progress = document.getElementById('progress');
+        progress.value = 0; // Reset progress
         try {
-            const ydl = new YTDlp();
-            const format = video ? 'best' : 'bestaudio';
-            const ext = video ? 'mp4' : 'mp3';
-            const filename = `${(currentInfo.title || 'media').replace(/[^a-z0-9]/gi, '_')}.${ext}`;
-            const output = await ydl.download(currentInfo.webpage_url || currentInfo.url, {
-                format,
-                output: filename,
-                onProgress: (p) => { progress.value = p.percentage || 0; }
+            let mediaUrl, ext, type;
+            if (video) {
+                mediaUrl = currentInfo.video?.[0]?.url || currentInfo.play || currentInfo.video?.url;
+                ext = 'mp4';
+                type = 'video/mp4';
+            } else {
+                mediaUrl = currentInfo.music || currentInfo.audio;
+                ext = 'mp3';
+                type = 'audio/mp3';
+            }
+
+            if (!mediaUrl && !video) {
+                // Extract audio using FFmpeg if no direct audio URL
+                const videoUrl = currentInfo.video?.[0]?.url || currentInfo.play || currentInfo.video?.url;
+                if (!videoUrl) throw new Error("No video URL available for audio extraction");
+                document.getElementById('status').textContent = "Extracting audio...";
+                const { createFFmpeg, fetchFile } = FFmpeg;
+                const ffmpeg = createFFmpeg({ log: true });
+                await ffmpeg.load();
+                const videoResponse = await fetch(videoUrl);
+                const videoBlob = await videoResponse.blob();
+                const videoName = 'input.mp4';
+                ffmpeg.FS('writeFile', videoName, await fetchFile(videoBlob));
+                await ffmpeg.run('-i', videoName, 'output.mp3');
+                const data = ffmpeg.FS('readFile', 'output.mp3');
+                const blob = new Blob([data.buffer], {type: 'audio/mp3'});
+                mediaUrl = URL.createObjectURL(blob);
+                ext = 'mp3';
+                type = 'audio/mp3';
+            }
+
+            if (!mediaUrl) throw new Error("No media URL available");
+
+            // Fetch with progress (using XMLHttpRequest for progress tracking)
+            const response = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', mediaUrl, true);
+                xhr.responseType = 'blob';
+                xhr.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        progress.value = (e.loaded / e.total) * 100;
+                    }
+                };
+                xhr.onload = () => resolve(xhr.response);
+                xhr.onerror = reject;
+                xhr.send();
             });
+
+            const blob = new Blob([response], { type });
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const filename = `${(currentInfo.title || 'media').replace(/[^a-z0-9]/gi, '_')}.${ext}`;
+            a.href = downloadUrl;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(downloadUrl);
             log(`✓ Saved: ${filename}`);
             document.getElementById('status').textContent = "Download complete! ✅";
             track(video ? 'Download Video' : 'Download Audio');
@@ -383,46 +421,26 @@
     }
 
     async function downloadImage() {
-        if (!currentInfo || !currentInfo.thumbnail) return alert("No image available");
-        const response = await fetch(currentInfo.thumbnail);
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_')}.jpg`;
-        a.click();
-        URL.revokeObjectURL(url);
-        log("✓ Image saved");
-        track('Download Image');
-    }
-
-    // Video Converter Function
-    async function convertVideo() {
-        const file = document.getElementById('localVideo').files[0];
-        if (!file) return alert('Select a file to convert');
-        const format = document.getElementById('outputFormat').value;
-        document.getElementById('status').textContent = "Converting...";
-        track('Video Converted', {format});
+        if (!currentInfo) return alert("Preview first");
+        let imageUrl = currentInfo.cover || currentInfo.thumbnail;
+        if (currentInfo.type === 'image' && currentInfo.images) {
+            imageUrl = currentInfo.images[0];
+        }
+        if (!imageUrl) return alert("No image available");
         try {
-            const { createFFmpeg, fetchFile } = FFmpeg;
-            const ffmpeg = createFFmpeg({ log: true });
-            await ffmpeg.load();
-            ffmpeg.FS('writeFile', file.name, await fetchFile(file));
-            await ffmpeg.run('-i', file.name, `output.${format}`);
-            const data = ffmpeg.FS('readFile', `output.${format}`);
-            const blob = new Blob([data.buffer], {type: format === 'mp3' ? 'audio/mp3' : 'video/mp4'});
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `converted.${format}`;
+            a.download = `${(currentInfo.title || 'image').replace(/[^a-z0-9]/gi, '_')}.jpg`;
             a.click();
             URL.revokeObjectURL(url);
-            log(`✓ Converted to ${format.toUpperCase()}`);
-            document.getElementById('status').textContent = "Conversion complete! ✅";
+            log("✓ Image saved");
+            track('Download Image');
         } catch (e) {
-            alert("Conversion failed: " + e.message);
-            log("✗ Conversion failed");
-            document.getElementById('status').textContent = "Error";
+            alert("Image download failed: " + e.message);
+            log("✗ Image download failed");
         }
     }
 
